@@ -11,6 +11,20 @@ natural languages. Running in the MS Windows environment, its use is governed by
 
 See the [Notepad++ official site](https://notepad-plus-plus.org/) for more information.
 
+本地改造：右键命名风格转换
+--------------------------
+
+选中编辑区文本后，在右键菜单“转成大写”“转成小写”后可使用四种命名风格转换：
+
+- `smallCamelCase`
+- `bigCamelCase`
+- `small_snake_case`
+- `big_snake_case`
+
+![命名风格转换右键菜单](docs/images/name-case-context-menu.png)
+
+已有 Notepad++ 配置会保留 `%AppData%\Notepad++\contextMenu.xml`。首次安装本改造版本后，如未看到新增菜单，请退出程序并删除该文件，再次启动即可生成包含新命令的默认右键菜单。
+
 
 Notepad++ GPG Release Key
 -------------------------
