@@ -47,7 +47,9 @@ OutFile ".\build\npp.${APPVERSION}.Installer.exe"
 !endif
 
 ; Sign uninstaller
+!ifndef SKIP_SIGNING
 !uninstfinalize  'sign-installers.bat "%1"' = 0     ; %1 is replaced by the uninstaller exe to be signed.
+!endif
 
 ; ------------------------------------------------------------------------
 ; Version Information

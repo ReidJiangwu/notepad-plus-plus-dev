@@ -80,6 +80,200 @@ using namespace std;
 
 std::mutex command_mutex;
 
+enum class NameConvertMode : uint8_t
+{
+	SmallCamel,
+	BigCamel,
+	SmallSnake,
+	BigSnake,
+};
+
+static bool isWordCharacter(wchar_t ch)
+{
+	return ::iswalnum(ch) != 0;
+}
+
+static bool isCamelBoundary(const wstring& text, size_t index)
+{
+	if (index == 0 || !isWordCharacter(text[index - 1]) || !isWordCharacter(text[index]))
+		return false;
+
+	const wchar_t prev = text[index - 1];
+	const wchar_t current = text[index];
+	const wchar_t next = (index + 1 < text.length()) ? text[index + 1] : L'\0';
+
+	if (::iswupper(current) && (::iswlower(prev) || ::iswdigit(prev)))
+		return true;
+	if (::iswupper(current) && ::iswupper(prev) && next != L'\0' && ::iswlower(next))
+		return true;
+
+	return false;
+}
+
+static vector<wstring> splitIntoWords(const wstring& text)
+{
+	vector<wstring> words;
+	wstring currentWord;
+
+	auto flushCurrentWord = [&currentWord, &words]()
+	{
+		if (!currentWord.empty())
+		{
+			words.push_back(currentWord);
+			currentWord.clear();
+		}
+	};
+
+	for (size_t i = 0; i < text.length(); ++i)
+	{
+		const wchar_t ch = text[i];
+		if (!isWordCharacter(ch))
+		{
+			flushCurrentWord();
+			continue;
+		}
+
+		if (!currentWord.empty() && isCamelBoundary(text, i))
+		{
+			flushCurrentWord();
+		}
+
+		currentWord.push_back(ch);
+	}
+
+	flushCurrentWord();
+	return words;
+}
+
+static wstring toLowerWord(const wstring& word)
+{
+	wstring converted = word;
+	for (auto& ch : converted)
+	{
+		if (::iswalpha(ch))
+			ch = static_cast<wchar_t>(::towlower(ch));
+	}
+	return converted;
+}
+
+static wstring toUpperWord(const wstring& word)
+{
+	wstring converted = word;
+	for (auto& ch : converted)
+	{
+		if (::iswalpha(ch))
+			ch = static_cast<wchar_t>(::towupper(ch));
+	}
+	return converted;
+}
+
+static wstring toCamelToken(const wstring& word, bool isFirstToken, NameConvertMode mode)
+{
+	wstring converted = toLowerWord(word);
+	if (isFirstToken && mode == NameConvertMode::SmallCamel)
+		return converted;
+
+	if (!converted.empty() && iswalpha(converted.front()))
+		converted.front() = static_cast<wchar_t>(::towupper(converted.front()));
+	return converted;
+}
+
+static wstring convertNameCaseText(const wstring& text, NameConvertMode mode)
+{
+	vector<wstring> words = splitIntoWords(text);
+	if (words.empty())
+		return text;
+
+	wstring converted;
+	for (size_t i = 0; i < words.size(); ++i)
+	{
+		const bool isFirstWord = (i == 0);
+		const wstring& word = words[i];
+		if (word.empty())
+			continue;
+
+		switch (mode)
+		{
+			case NameConvertMode::SmallCamel:
+				converted += toCamelToken(word, isFirstWord, NameConvertMode::SmallCamel);
+				break;
+
+			case NameConvertMode::BigCamel:
+				converted += toCamelToken(word, isFirstWord, NameConvertMode::BigCamel);
+				break;
+
+			case NameConvertMode::SmallSnake:
+				if (!converted.empty())
+					converted.push_back(L'_');
+				converted += toLowerWord(word);
+				break;
+
+			case NameConvertMode::BigSnake:
+				if (!converted.empty())
+					converted.push_back(L'_');
+				converted += toUpperWord(word);
+				break;
+		}
+	}
+
+	return converted;
+}
+
+static intptr_t convertSelectionToNameCase(ScintillaEditView* pEditView, intptr_t start, intptr_t end, NameConvertMode mode)
+{
+	if (!pEditView || start >= end)
+		return 0;
+
+	const wstring selectedText = pEditView->getGenericTextAsString(static_cast<size_t>(start), static_cast<size_t>(end));
+	const wstring convertedText = convertNameCaseText(selectedText, mode);
+	const intptr_t replacedLen = pEditView->replaceTarget(convertedText.c_str(), start, end);
+
+	return replacedLen - (end - start);
+}
+
+static void convertSelectedTextToNameCase(ScintillaEditView* pEditView, NameConvertMode mode)
+{
+	if (!pEditView)
+		return;
+
+	if (pEditView->execute(SCI_GETSELECTIONS) > 1)
+	{
+		pEditView->execute(SCI_BEGINUNDOACTION);
+
+		ColumnModeInfos cmi = pEditView->getColumnModeSelectInfo();
+		bool reversed = !cmi.empty() && cmi.back()._selLpos < cmi.front()._selLpos;
+		std::sort(cmi.begin(), cmi.end(), SortInPositionOrder());
+
+		intptr_t sizeDelta = 0;
+		for (ColumnModeInfo& info : cmi)
+		{
+			info._selLpos += sizeDelta;
+			info._selRpos += sizeDelta;
+			if (info._selLpos >= info._selRpos)
+				continue;
+
+			const intptr_t delta = convertSelectionToNameCase(pEditView, info._selLpos, info._selRpos, mode);
+			sizeDelta += delta;
+			info._selRpos += delta;
+		}
+
+		if (reversed)
+			std::reverse(cmi.begin(), cmi.end());
+		pEditView->setMultiSelections(cmi);
+		pEditView->execute(SCI_ENDUNDOACTION);
+		return;
+	}
+
+	const intptr_t selectionStart = pEditView->execute(SCI_GETSELECTIONSTART);
+	const intptr_t selectionEnd = pEditView->execute(SCI_GETSELECTIONEND);
+	if (selectionStart >= selectionEnd)
+		return;
+
+	const intptr_t delta = convertSelectionToNameCase(pEditView, selectionStart, selectionEnd, mode);
+	if (delta != 0)
+		pEditView->execute(SCI_SETSEL, selectionStart, selectionEnd + delta);
+}
+
 void Notepad_plus::macroPlayback(Macro macro, std::vector<Document>* pDocs4EndUAIn)
 {
 	_playingBackMacro = true;
@@ -2166,6 +2360,22 @@ void Notepad_plus::command(int id)
 
 		case IDM_EDIT_UPPERCASE:
             _pEditView->convertSelectedTextToUpperCase();
+			break;
+
+		case IDM_EDIT_SMALLCAMELCASE:
+			convertSelectedTextToNameCase(_pEditView, NameConvertMode::SmallCamel);
+			break;
+
+		case IDM_EDIT_BIGCAMELCASE:
+			convertSelectedTextToNameCase(_pEditView, NameConvertMode::BigCamel);
+			break;
+
+		case IDM_EDIT_SMALLSNAKECASE:
+			convertSelectedTextToNameCase(_pEditView, NameConvertMode::SmallSnake);
+			break;
+
+		case IDM_EDIT_BIGSNAKECASE:
+			convertSelectedTextToNameCase(_pEditView, NameConvertMode::BigSnake);
 			break;
 
 		case IDM_EDIT_LOWERCASE:
@@ -4454,6 +4664,10 @@ void Notepad_plus::command(int id)
 			case IDM_EDIT_REMOVEEMPTYLINES:
 			case IDM_EDIT_REMOVEEMPTYLINESWITHBLANK:
 			case IDM_EDIT_UPPERCASE:
+			case IDM_EDIT_SMALLCAMELCASE:
+			case IDM_EDIT_BIGCAMELCASE:
+			case IDM_EDIT_SMALLSNAKECASE:
+			case IDM_EDIT_BIGSNAKECASE:
 			case IDM_EDIT_LOWERCASE:
 			case IDM_EDIT_PROPERCASE_FORCE:
 			case IDM_EDIT_PROPERCASE_BLEND:

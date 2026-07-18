@@ -190,6 +190,10 @@
     #define    IDM_EDIT_SORTLINES_LENGTH_ASCENDING              (IDM_EDIT + 104)
     #define    IDM_EDIT_SORTLINES_LENGTH_DESCENDING             (IDM_EDIT + 105)
     #define    IDM_EDIT_REDACT_SELECTION                        (IDM_EDIT + 106)
+    #define    IDM_EDIT_SMALLCAMELCASE                          (IDM_EDIT + 107)
+    #define    IDM_EDIT_BIGCAMELCASE                            (IDM_EDIT + 108)
+    #define    IDM_EDIT_SMALLSNAKECASE                          (IDM_EDIT + 109)
+    #define    IDM_EDIT_BIGSNAKECASE                            (IDM_EDIT + 110)
 
     #define    IDM_EDIT_AUTOCOMPLETE                            (50000 + 0)
     #define    IDM_EDIT_AUTOCOMPLETE_CURRENTFILE                (50000 + 1)

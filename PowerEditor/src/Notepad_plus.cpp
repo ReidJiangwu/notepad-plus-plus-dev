@@ -2603,6 +2603,10 @@ void Notepad_plus::checkClipboard()
 	enableCommand(IDM_EDIT_DELETE, hasSelection, MENU | TOOLBAR);
 	enableCommand(IDM_EDIT_UPPERCASE, hasSelection, MENU);
 	enableCommand(IDM_EDIT_LOWERCASE, hasSelection, MENU);
+	enableCommand(IDM_EDIT_SMALLCAMELCASE, hasSelection, MENU);
+	enableCommand(IDM_EDIT_BIGCAMELCASE, hasSelection, MENU);
+	enableCommand(IDM_EDIT_SMALLSNAKECASE, hasSelection, MENU);
+	enableCommand(IDM_EDIT_BIGSNAKECASE, hasSelection, MENU);
 	enableCommand(IDM_EDIT_PROPERCASE_FORCE, hasSelection, MENU);
 	enableCommand(IDM_EDIT_PROPERCASE_BLEND, hasSelection, MENU);
 	enableCommand(IDM_EDIT_SENTENCECASE_FORCE, hasSelection, MENU);

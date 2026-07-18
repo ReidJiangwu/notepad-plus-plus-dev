@@ -525,6 +525,10 @@ https://npp-user-manual.org/docs/config-files/#the-context-menu-contextmenu-xml\
 		<Item id=\"0\"/>\r\n\
 		<Item MenuEntryName=\"Edit\" MenuItemName=\"UPPERCASE\"/>\r\n\
 		<Item MenuEntryName=\"Edit\" MenuItemName=\"lowercase\"/>\r\n\
+		<Item id=\"42107\" ItemNameAs=\"smallCamelCase\"/>\r\n\
+		<Item id=\"42108\" ItemNameAs=\"bigCamelCase\"/>\r\n\
+		<Item id=\"42109\" ItemNameAs=\"small_snake_case\"/>\r\n\
+		<Item id=\"42110\" ItemNameAs=\"big_snake_case\"/>\r\n\
 		<Item id=\"0\"/>\r\n\
 		<Item MenuEntryName=\"Edit\" MenuItemName=\"Open File\"/>\r\n\
 		<Item MenuEntryName=\"Edit\" MenuItemName=\"Search on Internet\"/>\r\n\

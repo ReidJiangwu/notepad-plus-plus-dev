@@ -1964,7 +1964,13 @@ LRESULT Notepad_plus::process(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 					std::vector<MenuItemUnit>& tmp = nppParam.getContextMenuItems();
 					bool copyLink = (_pEditView->getSelectedTextCount() == 0) && _pEditView->getIndicatorRange(URL_INDIC);
 					scintillaContextmenu.create(hwnd, tmp, _mainMenuHandle, copyLink);
-					
+
+					const bool hasSelection = _pEditView->hasSelection();
+					scintillaContextmenu.enableItem(IDM_EDIT_SMALLCAMELCASE, hasSelection);
+					scintillaContextmenu.enableItem(IDM_EDIT_BIGCAMELCASE, hasSelection);
+					scintillaContextmenu.enableItem(IDM_EDIT_SMALLSNAKECASE, hasSelection);
+					scintillaContextmenu.enableItem(IDM_EDIT_BIGSNAKECASE, hasSelection);
+
 					POINT p{};
 					p.x = GET_X_LPARAM(lParam);
 					p.y = GET_Y_LPARAM(lParam);
